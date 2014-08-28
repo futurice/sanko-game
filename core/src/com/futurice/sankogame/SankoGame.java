@@ -10,55 +10,52 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.TimeUtils;
 
-public class SankoGame implements ApplicationListener {
-    static private final float BUCKET_SIZE = 0.15f; // % of screen width
-    static private final float BUCKET_Y = 0.2f; // % of screen height
 
-    private Texture redBucketTexture; // #FF5455
-    private Texture greenBucketTexture; // #60E670
-    private Texture blueBucketTexture; // #38BFFA
-    private Texture yellowBucketTexture; // #FFF454
+/**
+ * The game.
+ *
+ * Basic colors are:
+ * red    #FF5455
+ * green  #60E670
+ * blue   #38BFFA
+ * yellow #FFF454
+ *
+ */
+public class SankoGame implements ApplicationListener {
     private Texture aimTexture;
     private ParticleEffect particleEffect;
     private SpriteBatch batch;
     private OrthographicCamera camera;
     private int screenWidth = 800;
     private int screenHeight = 480;
-    private float redFill = 100f;
-    private float greenFill = 100f;
-    private float blueFill = 100f;
-    private float yellowFill = 100f;
+    private Bucket redBucket;
+    private Bucket greenBucket;
+    private Bucket blueBucket;
+    private Bucket yellowBucket;
     private long gameTick = 0L;
     private long lastTime;
 
     @Override
     public void create() {
         batch = new SpriteBatch();
-        loadTextures();
-        camera = new OrthographicCamera();
-        camera.setToOrtho(true, screenWidth, screenHeight);
-
+        aimTexture = new Texture(Gdx.files.internal("images/aim.png"));
+        redBucket = new Bucket("images/red.png", 0.2f, 0.2f);
+        greenBucket = new Bucket("images/green.png", 0.4f, 0.2f);
+        blueBucket = new Bucket("images/blue.png", 0.6f, 0.2f);
+        yellowBucket = new Bucket("images/yellow.png", 0.8f, 0.2f);
         particleEffect = new ParticleEffect();
         particleEffect.load(Gdx.files.internal("effects/red-drops.p"), Gdx.files.internal("images"));
         particleEffect.setPosition(180f, 200f);
         particleEffect.start();
-        lastTime = TimeUtils.nanoTime();
-    }
 
-    private void loadTextures() {
-        redBucketTexture = new Texture(Gdx.files.internal("images/red.png"));
-        greenBucketTexture = new Texture(Gdx.files.internal("images/green.png"));
-        blueBucketTexture = new Texture(Gdx.files.internal("images/blue.png"));
-        yellowBucketTexture = new Texture(Gdx.files.internal("images/yellow.png"));
-        aimTexture = new Texture(Gdx.files.internal("images/aim.png"));
+        camera = new OrthographicCamera();
+        camera.setToOrtho(true, screenWidth, screenHeight);
+
+        lastTime = TimeUtils.nanoTime();
     }
 
     @Override
     public void render() {
-        // clear the screen with a dark blue color. The
-        // arguments to glClearColor are the red, green
-        // blue and alpha component in the range [0,1]
-        // of the color to be used to clear the screen.
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
@@ -74,17 +71,13 @@ public class SankoGame implements ApplicationListener {
 
         // begin a new batch and draw the buckets
         batch.begin();
-        drawBuckets(batch);
+        redBucket.update(batch, screenWidth, screenHeight);
+        greenBucket.update(batch, screenWidth, screenHeight);
+        blueBucket.update(batch, screenWidth, screenHeight);
+        yellowBucket.update(batch, screenWidth, screenHeight);
         drawAim(batch);
         particleEffect.draw(batch, (float) delta);
         batch.end();
-    }
-
-    private void drawBuckets(final SpriteBatch batch) {
-        drawBucket(batch, redBucketTexture, 0.2f, redFill);
-        drawBucket(batch, blueBucketTexture, 0.4f, blueFill);
-        drawBucket(batch, greenBucketTexture, 0.6f, greenFill);
-        drawBucket(batch, yellowBucketTexture, 0.8f, yellowFill);
     }
 
     private double calculateDelta() {
@@ -92,24 +85,6 @@ public class SankoGame implements ApplicationListener {
         final double delta = (double) (now - lastTime) * 0.000000001;
         lastTime = now;
         return delta;
-    }
-
-    /**
-     * @param batch
-     * @param texture
-     * @param x percentage of the screen width
-     * @param height [0,100] as a percentage of the bucket original height
-     */
-    private void drawBucket(final SpriteBatch batch, final Texture texture, final float x, final float height) {
-        final int bucketSize = (int) (screenWidth * BUCKET_SIZE);
-        final int bucketY = (int) (screenHeight * BUCKET_Y);
-        batch.draw(
-            texture,
-            (int)(screenWidth*x - bucketSize*0.5),
-            bucketY,
-            bucketSize,
-            bucketSize*height*0.01f
-        );
     }
 
     private Vector3 getAimPosition() {
