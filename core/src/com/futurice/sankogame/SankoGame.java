@@ -8,29 +8,28 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.ParticleEffect;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.TimeUtils;
 
 public class SankoGame implements ApplicationListener {
-    private Texture redBucketTexture;
-    private Texture greenBucketTexture;
-    private Texture blueBucketTexture;
-    private Texture yellowBucketTexture;
+    static private final float BUCKET_SIZE = 0.15f; // % of screen width
+    static private final float BUCKET_Y = 0.2f; // % of screen height
+
+    private Texture redBucketTexture; // #FF5455
+    private Texture greenBucketTexture; // #60E670
+    private Texture blueBucketTexture; // #38BFFA
+    private Texture yellowBucketTexture; // #FFF454
     private Texture aimTexture;
     private ParticleEffect particleEffect;
-
     private SpriteBatch batch;
     private OrthographicCamera camera;
-
+    private int screenWidth = 800;
+    private int screenHeight = 480;
     private float redFill = 100f;
     private float greenFill = 100f;
     private float blueFill = 100f;
     private float yellowFill = 100f;
-
-    private int screenWidth = 800;
-    private int screenHeight = 480;
     private long gameTick = 0L;
-
-    static private final float BUCKET_SIZE = 0.15f; // % of screen width
-    static private final float BUCKET_Y = 0.2f; // % of screen height
+    private long lastTime;
 
     @Override
     public void create() {
@@ -39,10 +38,11 @@ public class SankoGame implements ApplicationListener {
         camera = new OrthographicCamera();
         camera.setToOrtho(true, screenWidth, screenHeight);
 
-//        particleEffect = new ParticleEffect();
-//        particleEffect.load(Gdx.files.internal("effects/drop.p"), Gdx.files.internal("images"));
-//        particleEffect.setPosition(180f, 180f);
-//        particleEffect.start();
+        particleEffect = new ParticleEffect();
+        particleEffect.load(Gdx.files.internal("effects/red-drops.p"), Gdx.files.internal("images"));
+        particleEffect.setPosition(180f, 200f);
+        particleEffect.start();
+        lastTime = TimeUtils.nanoTime();
     }
 
     private void loadTextures() {
@@ -63,6 +63,7 @@ public class SankoGame implements ApplicationListener {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         gameTick++;
+        final double delta = calculateDelta();
 
         // tell the camera to update its matrices.
         camera.update();
@@ -75,7 +76,7 @@ public class SankoGame implements ApplicationListener {
         batch.begin();
         drawBuckets(batch);
         drawAim(batch);
-//        particleEffect.draw(batch);
+        particleEffect.draw(batch, (float) delta);
         batch.end();
     }
 
@@ -84,6 +85,13 @@ public class SankoGame implements ApplicationListener {
         drawBucket(batch, blueBucketTexture, 0.4f, blueFill);
         drawBucket(batch, greenBucketTexture, 0.6f, greenFill);
         drawBucket(batch, yellowBucketTexture, 0.8f, yellowFill);
+    }
+
+    private double calculateDelta() {
+        final long now = TimeUtils.nanoTime();
+        final double delta = (double) (now - lastTime) * 0.000000001;
+        lastTime = now;
+        return delta;
     }
 
     /**
