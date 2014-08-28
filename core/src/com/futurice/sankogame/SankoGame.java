@@ -6,51 +6,51 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.ParticleEffect;
-import com.badlogic.gdx.graphics.g2d.ParticleEffectPool;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.math.Vector3;
 
 public class SankoGame implements ApplicationListener {
-    private Texture redBucketImage;
-    private Texture greenBucketImage;
-    private Texture blueBucketImage;
-    private Texture yellowBucketImage;
+    private Texture redBucketTexture;
+    private Texture greenBucketTexture;
+    private Texture blueBucketTexture;
+    private Texture yellowBucketTexture;
+    private Texture aimTexture;
+    private ParticleEffect particleEffect;
+
     private SpriteBatch batch;
     private OrthographicCamera camera;
 
-    private double redFill;
-    private double greenFill;
-    private double blueFill;
-    private double yellowFill;
+    private float redFill = 100f;
+    private float greenFill = 100f;
+    private float blueFill = 100f;
+    private float yellowFill = 100f;
 
     private int screenWidth = 800;
     private int screenHeight = 480;
+    private long gameTick = 0L;
 
-    Array<ParticleEffectPool.PooledEffect> effects;
+    static private final float BUCKET_SIZE = 0.15f; // % of screen width
+    static private final float BUCKET_Y = 0.2f; // % of screen height
 
     @Override
     public void create() {
-        // load the images for the droplet and the bucket, 64x64 pixels each
-//        dropImage = new Texture(Gdx.files.internal("droplet.png"));
-        redBucketImage = new Texture(Gdx.files.internal("red.png"));
-        greenBucketImage = new Texture(Gdx.files.internal("green.png"));
-        blueBucketImage = new Texture(Gdx.files.internal("blue.png"));
-        yellowBucketImage = new Texture(Gdx.files.internal("yellow.png"));
-
-        // create the camera and the SpriteBatch
+        batch = new SpriteBatch();
+        loadTextures();
         camera = new OrthographicCamera();
         camera.setToOrtho(true, screenWidth, screenHeight);
-        batch = new SpriteBatch();
 
-        ParticleEffectPool bombEffectPool;
-        effects = new Array();
-        ParticleEffect bombEffect = new ParticleEffect();
-        bombEffect.load(Gdx.files.internal("blueparticles.p"), Gdx.files.internal("redparticle"));
-        bombEffectPool = new ParticleEffectPool(bombEffect, 1, 2);
-        // Create effect:
-        ParticleEffectPool.PooledEffect effect = bombEffectPool.obtain();
-        effect.setPosition(100, 50);
-        effects.add(effect);
+//        particleEffect = new ParticleEffect();
+//        particleEffect.load(Gdx.files.internal("effects/drop.p"), Gdx.files.internal("images"));
+//        particleEffect.setPosition(180f, 180f);
+//        particleEffect.start();
+    }
+
+    private void loadTextures() {
+        redBucketTexture = new Texture(Gdx.files.internal("images/red.png"));
+        greenBucketTexture = new Texture(Gdx.files.internal("images/green.png"));
+        blueBucketTexture = new Texture(Gdx.files.internal("images/blue.png"));
+        yellowBucketTexture = new Texture(Gdx.files.internal("images/yellow.png"));
+        aimTexture = new Texture(Gdx.files.internal("images/aim.png"));
     }
 
     @Override
@@ -62,6 +62,8 @@ public class SankoGame implements ApplicationListener {
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
+        gameTick++;
+
         // tell the camera to update its matrices.
         camera.update();
 
@@ -70,36 +72,73 @@ public class SankoGame implements ApplicationListener {
         batch.setProjectionMatrix(camera.combined);
 
         // begin a new batch and draw the buckets
-        int bucketSize = (int) (screenWidth*0.15f);
         batch.begin();
-        batch.draw(redBucketImage, (int)(screenWidth*0.2f - bucketSize*0.5), 50, bucketSize, bucketSize);
-        batch.draw(blueBucketImage, (int)(screenWidth*0.4f - bucketSize*0.5), 50, bucketSize, bucketSize);
-        batch.draw(greenBucketImage, (int)(screenWidth*0.6f - bucketSize*0.5), 50, bucketSize, bucketSize);
-        batch.draw(yellowBucketImage, (int)(screenWidth*0.8f - bucketSize*0.5), 50, bucketSize, bucketSize);
-
-        // Update and draw effects:
-        for (int i = effects.size - 1; i >= 0; i--) {
-            ParticleEffectPool.PooledEffect effect = effects.get(i);
-            effect.draw(batch);
-            if (effect.isComplete()) {
-                effect.free();
-                effects.removeIndex(i);
-            }
-        }
-
+        drawBuckets(batch);
+        drawAim(batch);
+//        particleEffect.draw(batch);
         batch.end();
+    }
+
+    private void drawBuckets(final SpriteBatch batch) {
+        drawBucket(batch, redBucketTexture, 0.2f, redFill);
+        drawBucket(batch, blueBucketTexture, 0.4f, blueFill);
+        drawBucket(batch, greenBucketTexture, 0.6f, greenFill);
+        drawBucket(batch, yellowBucketTexture, 0.8f, yellowFill);
+    }
+
+    /**
+     * @param batch
+     * @param texture
+     * @param x percentage of the screen width
+     * @param height [0,100] as a percentage of the bucket original height
+     */
+    private void drawBucket(final SpriteBatch batch, final Texture texture, final float x, final float height) {
+        final int bucketSize = (int) (screenWidth * BUCKET_SIZE);
+        final int bucketY = (int) (screenHeight * BUCKET_Y);
+        batch.draw(
+            texture,
+            (int)(screenWidth*x - bucketSize*0.5),
+            bucketY,
+            bucketSize,
+            bucketSize*height*0.01f
+        );
+    }
+
+    private Vector3 getAimPosition() {
+        final int inputX = Gdx.input.getX();
+        final int inputY = Gdx.input.getY();
+        if (inputX == 0 || inputY == 0) {
+            return new Vector3(screenWidth*0.5f, screenHeight*0.5f, 0);
+        }
+        else {
+            Vector3 touchPos = new Vector3();
+            touchPos.set(inputX, inputY, 0);
+            return camera.unproject(touchPos);
+        }
+    }
+
+    private void drawAim(final SpriteBatch batch) {
+        final Vector3 aimPosition = getAimPosition();
+        int aimSize = (int) (screenWidth*0.04f);
+        batch.draw(aimTexture,
+            aimPosition.x - aimSize*0.5f, aimPosition.y - aimSize*0.5f,
+            aimSize*0.5f, aimSize*0.5f,
+            aimSize, aimSize,
+            1f, 1f,
+            (gameTick * 3) % 360,
+            0, 0,
+            200, 200,
+            false, false
+        );
     }
 
     @Override
     public void dispose() {
         // dispose of all the native resources
         batch.dispose();
-
-        // Reset all effects:
-        for (int i = effects.size - 1; i >= 0; i--) {
-            effects.get(i).free();
+        if (particleEffect != null) {
+            particleEffect.dispose();
         }
-        effects.clear();
     }
 
     @Override
