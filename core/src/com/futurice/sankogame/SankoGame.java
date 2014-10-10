@@ -8,6 +8,9 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.TimeUtils;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * The game.
@@ -22,14 +25,17 @@ public class SankoGame implements ApplicationListener {
     private int screenWidth = 800;
     private int screenHeight = 480;
     private Hero hero;
+    private List<Bullet> bullets;
     private Cloud cloud;
     private long lastTime;
+    private boolean bulletJustShot;
 
     @Override
     public void create() {
         Gdx.app.setLogLevel(Application.LOG_DEBUG);
         batch = new SpriteBatch();
         hero = new Hero(screenWidth, screenHeight);
+        bullets = new ArrayList<Bullet>();
         cloud = new Cloud(Cloud.Size.BIG);
 
         camera = new OrthographicCamera();
@@ -58,11 +64,21 @@ public class SankoGame implements ApplicationListener {
         batch.begin();
         cloud.redraw(batch);
         hero.redraw(batch, delta);
+        updateBullets();
         batch.end();
     }
 
     public void updatePhysics() {
         // User inputs
+        if (Gdx.input.isKeyPressed(Input.Keys.X)) {
+            if (!bulletJustShot) {
+                bullets.add(new Bullet(hero.x, hero.y));
+                bulletJustShot = true;
+            }
+        } else {
+            bulletJustShot = false;
+        }
+
         if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
             hero.setVelocityX(-GamePlayParams.HERO_MOVE_SPEED_X);
         } else if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
@@ -70,6 +86,8 @@ public class SankoGame implements ApplicationListener {
         } else {
             hero.setVelocityX(hero.getVelocityX() * GamePlayParams.HERO_MOVE_DECELERATION_X);
         }
+
+        // Physics updated
         hero.x += hero.getVelocityX();
 
         // Environment restrictions
@@ -79,6 +97,20 @@ public class SankoGame implements ApplicationListener {
         } else if (hero.x > screenWidth-hero.getBoundingBox().getWidth()) {
             hero.x = screenWidth-hero.getBoundingBox().getWidth();
             hero.setVelocityX(0);
+        }
+    }
+
+    public void updateBullets() {
+        Iterator<Bullet> it = bullets.iterator();
+        while (it.hasNext()) {
+            Bullet bullet = it.next();
+            bullet.redraw(batch);
+            if (bullet.canDestroy) {
+                it.remove();
+            }
+        }
+        if (bullets.size() > 0) {
+            Gdx.app.log("CloudsGame", "bullets: "+bullets.size());
         }
     }
 

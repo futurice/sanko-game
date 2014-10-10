@@ -7,9 +7,6 @@ import com.badlogic.gdx.math.Rectangle;
 
 public class Cloud {
     static private final String TEXTURE_PATH = "images/CloudBig1.png";
-    static public final float SPEED_X_BIG = 4f;
-    static public final float SPEED_X_MEDIUM = 8f;
-    static public final float SPEED_X_SMALL = 16f;
 
     private Texture texture;
     private Rectangle boundingBox;
@@ -37,13 +34,13 @@ public class Cloud {
     private float getVelocityXforSize() {
         switch (size) {
             case SMALL:
-                return SPEED_X_SMALL;
+                return GamePlayParams.CLOUD_SMALL_SPEED_X;
             case MEDIUM:
-                return SPEED_X_MEDIUM;
+                return GamePlayParams.CLOUD_MEDIUM_SPEED_X;
             case BIG:
-                return SPEED_X_BIG;
+                return GamePlayParams.CLOUD_BIG_SPEED_X;
             default:
-                return SPEED_X_BIG;
+                return GamePlayParams.CLOUD_BIG_SPEED_X;
         }
     }
 
