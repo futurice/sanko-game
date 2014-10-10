@@ -62,7 +62,7 @@ public class Cloud {
         y = 0;
     }
 
-    public void update(final SpriteBatch batch) {
+    public void redraw(final SpriteBatch batch) {
         x += vx;
         y += vy;
         if (x > screenWidth && vx > 0) {

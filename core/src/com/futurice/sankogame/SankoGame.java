@@ -3,6 +3,7 @@ package com.futurice.sankogame;
 import com.badlogic.gdx.Application;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -53,12 +54,35 @@ public class SankoGame implements ApplicationListener {
         // coordinate system specified by the camera.
         batch.setProjectionMatrix(camera.combined);
 
+        updatePhysics();
+
         // begin a new batch and draw the buckets
         batch.begin();
-        cloud.update(batch);
-        hero.update(batch, delta);
+        cloud.redraw(batch);
+        hero.redraw(batch, delta);
         //aim.update(camera, batch, screenWidth, screenHeight, gameTick);
         batch.end();
+    }
+
+    public void updatePhysics() {
+        // User inputs
+        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
+            hero.setVelocityX(-GamePlayParams.HERO_MOVE_SPEED_X);
+        } else if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
+            hero.setVelocityX(GamePlayParams.HERO_MOVE_SPEED_X);
+        } else {
+            hero.setVelocityX(hero.getVelocityX() * GamePlayParams.HERO_MOVE_DECELERATION_X);
+        }
+        hero.x += hero.getVelocityX();
+
+        // Environment restrictions
+        if (hero.x < hero.getBoundingBox().getWidth()) {
+            hero.x = hero.getBoundingBox().getWidth();
+            hero.setVelocityX(0);
+        } else if (hero.x > screenWidth-hero.getBoundingBox().getWidth()) {
+            hero.x = screenWidth-hero.getBoundingBox().getWidth();
+            hero.setVelocityX(0);
+        }
     }
 
     private double calculateDelta() {
