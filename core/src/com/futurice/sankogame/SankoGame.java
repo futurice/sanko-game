@@ -21,7 +21,6 @@ public class SankoGame implements ApplicationListener {
     private OrthographicCamera camera;
     private int screenWidth = 800;
     private int screenHeight = 480;
-    private Aim aim;
     private Hero hero;
     private Cloud cloud;
     private long lastTime;
@@ -30,7 +29,6 @@ public class SankoGame implements ApplicationListener {
     public void create() {
         Gdx.app.setLogLevel(Application.LOG_DEBUG);
         batch = new SpriteBatch();
-        //aim = new Aim();
         hero = new Hero(screenWidth, screenHeight);
         cloud = new Cloud(Cloud.Size.BIG);
 
@@ -60,7 +58,6 @@ public class SankoGame implements ApplicationListener {
         batch.begin();
         cloud.redraw(batch);
         hero.redraw(batch, delta);
-        //aim.update(camera, batch, screenWidth, screenHeight, gameTick);
         batch.end();
     }
 
