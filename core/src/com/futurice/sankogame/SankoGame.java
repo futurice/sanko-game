@@ -1,5 +1,6 @@
 package com.futurice.sankogame;
 
+import com.badlogic.gdx.Application;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
@@ -26,6 +27,7 @@ public class SankoGame implements ApplicationListener {
 
     @Override
     public void create() {
+        Gdx.app.setLogLevel(Application.LOG_DEBUG);
         batch = new SpriteBatch();
         //aim = new Aim();
         hero = new Hero(screenWidth, screenHeight);

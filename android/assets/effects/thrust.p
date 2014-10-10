@@ -8,10 +8,10 @@ lowMax: 1000.0
 min: 0
 max: 30
 - Emission - 
-lowMin: 20.0
-lowMax: 20.0
-highMin: 25.0
-highMax: 25.0
+lowMin: 25.0
+lowMax: 25.0
+highMin: 30.0
+highMax: 30.0
 relative: true
 scalingCount: 9
 scaling0: 1.0
