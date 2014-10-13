@@ -54,7 +54,7 @@ public class Hero {
 
     public void setVelocityX(double value) {
         vx = value;
-        particleEffect.setParentVelocityX((float) value);
+        particleEffect.setParentVelocityX((float) (value*0.9));
     }
 
     public double getVelocityX() {
@@ -80,7 +80,7 @@ public class Hero {
             texture.getWidth() * 0.5f, texture.getHeight() * 0.5f, // origin
             texture.getWidth(), texture.getHeight(), // width,height
             1f, 1f, // scale
-            0f, // rotation
+            (float) vx, // rotation
             0, 0, // source anchor
             texture.getWidth(), texture.getHeight(), // source size
             false, true // flip horiz/vertical

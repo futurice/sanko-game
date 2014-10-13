@@ -10,8 +10,8 @@ public class Bullet {
 
     private Texture texture;
     private Rectangle boundingBox;
-    private double x;
-    private double y;
+    public double x;
+    public double y;
     private double vx;
     private double vy;
     private float screenWidth = 1000000f;
@@ -31,11 +31,12 @@ public class Bullet {
     public void redraw(final SpriteBatch batch) {
         x += vx;
         y += vy;
-        if (y - texture.getHeight() < 0) {
-            canDestroy = true;
-        }
         updateBoundingBox();
         draw(batch);
+    }
+
+    public Rectangle getBoundingBox() {
+        return boundingBox;
     }
 
     private void updateBoundingBox() {

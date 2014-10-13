@@ -10,10 +10,11 @@ public class Cloud {
 
     private Texture texture;
     private Rectangle boundingBox;
-    private int x;
-    private int y;
-    private float vx;
-    private float vy = 3f;
+    public double x;
+    public double y;
+    public double vx;
+    private boolean goingToRight;
+    private double vy = GamePlayParams.ENVIRONMENT_INITIAL_SPEED_Y;
     private Size size;
     private float screenWidth = 1000000f;
 
@@ -31,7 +32,7 @@ public class Cloud {
         updateBoundingBox();
     }
 
-    private float getVelocityXforSize() {
+    private static float getVelocityXforSize(Size size) {
         switch (size) {
             case SMALL:
                 return GamePlayParams.CLOUD_SMALL_SPEED_X;
@@ -44,48 +45,46 @@ public class Cloud {
         }
     }
 
-    public void spawnFromScreenBorder(final float screenWidth, final float screenHeight) {
-        this.screenWidth = screenWidth;
-        final float velocityX = getVelocityXforSize();
-        final boolean fromLeft = true;
-        if (fromLeft) {
-            x = (int) (- texture.getWidth()*1.1f);
-            vx = velocityX;
+    public static Cloud spawnFromScreenBorder(final Size size, final float screenWidth) {
+        final float velocityX = getVelocityXforSize(size);
+        final Cloud cloud = new Cloud(size);
+        cloud.goingToRight = Math.random() > 0.5;
+        if (cloud.goingToRight) {
+            cloud.vx = velocityX;
         }
         else {
-            x = (int) (screenWidth + texture.getWidth()*1.1f);
-            vx = -velocityX;
+            cloud.vx = -velocityX;
         }
-        y = 0;
+        cloud.x = (int) (screenWidth*Math.random() - cloud.getBoundingBox().getWidth()*0.5);
+        cloud.y = (int) (-cloud.getBoundingBox().getHeight());
+        return cloud;
     }
 
     public void redraw(final SpriteBatch batch) {
         x += vx;
         y += vy;
-        if (x > screenWidth && vx > 0) {
-            canDestroy = true;
-        }
-        if (x-texture.getWidth() < 0 && vx < 0) {
-            canDestroy = true;
-        }
         updateBoundingBox();
         draw(batch);
     }
 
+    public Rectangle getBoundingBox() {
+        return boundingBox;
+    }
+
     private void updateBoundingBox() {
-        boundingBox.set(x, y, texture.getWidth(), texture.getHeight());
+        boundingBox.set((float) x, (float) y, texture.getWidth(), texture.getHeight());
     }
 
     private void draw(final SpriteBatch batch) {
         batch.draw(texture,
-            x, y,
+            (float) x, (float) y,
             texture.getWidth()*0.5f, texture.getHeight()*0.5f, // origin
             texture.getWidth(), texture.getHeight(), // width,height
             1f, 1f, // scale
             0f, // rotation
             0, 0, // source anchor
             texture.getWidth(), texture.getHeight(), // source size
-            false, true // flip horiz/vertical
+            !goingToRight, true // flip horiz/vertical
         );
     }
 }

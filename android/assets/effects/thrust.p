@@ -8,10 +8,10 @@ lowMax: 1000.0
 min: 0
 max: 30
 - Emission - 
-lowMin: 25.0
-lowMax: 25.0
-highMin: 30.0
-highMax: 30.0
+lowMin: 30.0
+lowMax: 30.0
+highMin: 40.0
+highMax: 40.0
 relative: true
 scalingCount: 9
 scaling0: 1.0
@@ -34,10 +34,10 @@ timeline6: 0.7243736
 timeline7: 0.87243736
 timeline8: 1.0
 - Life - 
-lowMin: 600.0
-lowMax: 600.0
-highMin: 600.0
-highMax: 600.0
+lowMin: 300.0
+lowMax: 300.0
+highMin: 500.0
+highMax: 500.0
 relative: false
 scalingCount: 2
 scaling0: 1.0
@@ -49,8 +49,8 @@ timeline1: 1.0
 active: false
 - X Offset - 
 active: true
-lowMin: -5.0
-lowMax: -5.0
+lowMin: -10.0
+lowMax: -10.0
 highMin: 0.0
 highMax: 0.0
 relative: false
@@ -63,10 +63,10 @@ active: false
 - Spawn Shape - 
 shape: line
 - Spawn Width - 
-lowMin: 10.0
-lowMax: 10.0
-highMin: 10.0
-highMax: 10.0
+lowMin: 20.0
+lowMax: 20.0
+highMin: 20.0
+highMax: 20.0
 relative: false
 scalingCount: 1
 scaling0: 1.0
@@ -94,10 +94,10 @@ timelineCount: 1
 timeline0: 0.0
 - Velocity - 
 active: true
-lowMin: 0.0
-lowMax: 0.0
-highMin: 0.0
-highMax: 0.0
+lowMin: 400.0
+lowMax: 400.0
+highMin: 400.0
+highMax: 400.0
 relative: false
 scalingCount: 1
 scaling0: 1.0
@@ -135,8 +135,8 @@ timeline0: 0.0
 active: true
 lowMin: 0.0
 lowMax: 0.0
-highMin: 600.0
-highMax: 600.0
+highMin: 0.0
+highMax: 0.0
 relative: false
 scalingCount: 2
 scaling0: 0.0

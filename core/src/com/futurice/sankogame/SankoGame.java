@@ -26,8 +26,9 @@ public class SankoGame implements ApplicationListener {
     private int screenHeight = 480;
     private Hero hero;
     private List<Bullet> bullets;
-    private Cloud cloud;
+    private List<Cloud> clouds;
     private long lastTime;
+    private long lastTimeSpawnedCloud;
     private boolean bulletJustShot;
 
     @Override
@@ -36,12 +37,13 @@ public class SankoGame implements ApplicationListener {
         batch = new SpriteBatch();
         hero = new Hero(screenWidth, screenHeight);
         bullets = new ArrayList<Bullet>();
-        cloud = new Cloud(Cloud.Size.BIG);
+        clouds = new ArrayList<Cloud>();
 
         camera = new OrthographicCamera();
         camera.setToOrtho(true, screenWidth, screenHeight);
 
         lastTime = TimeUtils.nanoTime();
+        lastTimeSpawnedCloud = lastTime;
     }
 
     @Override
@@ -58,18 +60,13 @@ public class SankoGame implements ApplicationListener {
         // coordinate system specified by the camera.
         batch.setProjectionMatrix(camera.combined);
 
+        handlePlayerInputs();
         updatePhysics();
-
-        // begin a new batch and draw the buckets
-        batch.begin();
-        cloud.redraw(batch);
-        hero.redraw(batch, delta);
-        updateBullets();
-        batch.end();
+        redrawAll(delta);
     }
 
-    public void updatePhysics() {
-        // User inputs
+    private void handlePlayerInputs() {
+        // Shoot
         if (Gdx.input.isKeyPressed(Input.Keys.X)) {
             if (!bulletJustShot) {
                 bullets.add(new Bullet(hero.x, hero.y));
@@ -79,6 +76,7 @@ public class SankoGame implements ApplicationListener {
             bulletJustShot = false;
         }
 
+        // Move sideways
         if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
             hero.setVelocityX(-GamePlayParams.HERO_MOVE_SPEED_X);
         } else if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
@@ -86,7 +84,9 @@ public class SankoGame implements ApplicationListener {
         } else {
             hero.setVelocityX(hero.getVelocityX() * GamePlayParams.HERO_MOVE_DECELERATION_X);
         }
+    }
 
+    public void updatePhysics() {
         // Physics updated
         hero.x += hero.getVelocityX();
 
@@ -97,6 +97,29 @@ public class SankoGame implements ApplicationListener {
         } else if (hero.x > screenWidth-hero.getBoundingBox().getWidth()) {
             hero.x = screenWidth-hero.getBoundingBox().getWidth();
             hero.setVelocityX(0);
+        }
+
+        // Spawn clouds
+        final long now = TimeUtils.nanoTime();
+        if (now - lastTimeSpawnedCloud > GamePlayParams.CLOUD_SPAWN_INTERVAL*1000000) {
+            clouds.add(Cloud.spawnFromScreenBorder(Cloud.Size.BIG, screenWidth));
+            lastTimeSpawnedCloud = now;
+        }
+
+        // Remove old bullets
+        for (Bullet b : bullets) {
+            if (b.y - b.getBoundingBox().getHeight() < 0) {
+                b.canDestroy = true;
+            }
+        }
+        // Remove old clouds
+        for (Cloud c : clouds) {
+            if (c.x > screenWidth && c.vx > 0) {
+                c.canDestroy = true;
+            }
+            if (c.x+c.getBoundingBox().getWidth() < 0 && c.vx < 0) {
+                c.canDestroy = true;
+            }
         }
     }
 
@@ -109,8 +132,16 @@ public class SankoGame implements ApplicationListener {
                 it.remove();
             }
         }
-        if (bullets.size() > 0) {
-            Gdx.app.log("CloudsGame", "bullets: "+bullets.size());
+    }
+
+    public void updateClouds() {
+        Iterator<Cloud> it = clouds.iterator();
+        while (it.hasNext()) {
+            Cloud cloud = it.next();
+            cloud.redraw(batch);
+            if (cloud.canDestroy) {
+                it.remove();
+            }
         }
     }
 
@@ -119,6 +150,14 @@ public class SankoGame implements ApplicationListener {
         final double delta = (double) (now - lastTime) * 0.000000001;
         lastTime = now;
         return delta;
+    }
+
+    private void redrawAll(double delta) {
+        batch.begin();
+        hero.redraw(batch, delta);
+        updateBullets();
+        updateClouds();
+        batch.end();
     }
 
     @Override
@@ -133,7 +172,6 @@ public class SankoGame implements ApplicationListener {
         screenWidth = width;
         screenHeight = height;
         camera.setToOrtho(true, screenWidth, screenHeight);
-        cloud.spawnFromScreenBorder(screenWidth, screenHeight);
         hero.resetToInitialPosition(width, height);
     }
 
