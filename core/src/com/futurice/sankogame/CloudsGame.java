@@ -15,7 +15,7 @@ import java.util.List;
 /**
  * The game.
  */
-public class SankoGame implements ApplicationListener {
+public class CloudsGame implements ApplicationListener {
     private static final float BLACK_R = 33f/255f;
     private static final float BLACK_G = 15f/255f;
     private static final float BLACK_B = 0f/255f;
@@ -105,6 +105,19 @@ public class SankoGame implements ApplicationListener {
             clouds.add(Cloud.spawnFromScreenBorder(Cloud.Size.BIG, screenWidth));
             lastTimeSpawnedCloud = now;
         }
+
+        // Resolve collisions
+        List<Cloud> newSplittedClouds = new ArrayList<Cloud>();
+        for (Bullet b : bullets) {
+            for (Cloud c : clouds) {
+                if (b.getBoundingBox().overlaps(c.getBoundingBox())) {
+                    b.canDestroy = true;
+                    c.canDestroy = true;
+                    newSplittedClouds.addAll(c.split());
+                }
+            }
+        }
+        clouds.addAll(newSplittedClouds);
 
         // Remove old bullets
         for (Bullet b : bullets) {
