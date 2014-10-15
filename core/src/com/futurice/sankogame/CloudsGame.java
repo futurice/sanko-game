@@ -53,6 +53,12 @@ public class CloudsGame implements ApplicationListener {
         lastTimeSpawnedCloud = lastTime;
     }
 
+    private void resetGame() {
+        hero.resetToInitialPosition(screenWidth, screenHeight);
+        bullets.clear();
+        clouds.clear();
+    }
+
     @Override
     public void render() {
         Gdx.gl.glClearColor(BLACK_R, BLACK_G, BLACK_B, 1);
@@ -148,7 +154,7 @@ public class CloudsGame implements ApplicationListener {
             lastTimeSpawnedCloud = now;
         }
 
-        // Resolve collisions
+        // Resolve cloud-bullet collisions
         List<Cloud> newSplittedClouds = new ArrayList<Cloud>();
         for (Bullet b : bullets) {
             for (Cloud c : clouds) {
@@ -160,6 +166,17 @@ public class CloudsGame implements ApplicationListener {
             }
         }
         clouds.addAll(newSplittedClouds);
+
+        // Resolve hero-cloud collisions
+        boolean heroDied = false;
+        for (Cloud c : clouds) {
+            if (c.getBoundingBox().overlaps(hero.getBoundingBox())) {
+                heroDied = true;
+            }
+        }
+        if (heroDied) {
+            resetGame();
+        }
 
         // Remove old bullets
         for (Bullet b : bullets) {
