@@ -28,6 +28,7 @@ public class CloudsGame implements ApplicationListener {
     private int screenWidth = 800;
     private int screenHeight = 480;
     private Hero hero;
+    private Score score;
     private List<Bullet> bullets;
     private List<Cloud> clouds;
     private long lastTime;
@@ -40,6 +41,7 @@ public class CloudsGame implements ApplicationListener {
         Gdx.app.setLogLevel(Application.LOG_DEBUG);
         batch = new SpriteBatch();
         hero = new Hero(screenWidth, screenHeight);
+        score = new Score(screenWidth, screenHeight);
         bullets = new ArrayList<Bullet>();
         clouds = new ArrayList<Cloud>();
         if (Controllers.getControllers().size > 0) {
@@ -57,6 +59,7 @@ public class CloudsGame implements ApplicationListener {
         hero.resetToInitialPosition(screenWidth, screenHeight);
         bullets.clear();
         clouds.clear();
+        score.reset();
     }
 
     @Override
@@ -162,6 +165,7 @@ public class CloudsGame implements ApplicationListener {
                     b.canDestroy = true;
                     c.canDestroy = true;
                     newSplittedClouds.addAll(c.split());
+                    score.add(1);
                 }
             }
         }
@@ -229,6 +233,7 @@ public class CloudsGame implements ApplicationListener {
         hero.redraw(batch, delta);
         updateBullets();
         updateClouds();
+        score.redraw(batch);
         batch.end();
     }
 
@@ -244,7 +249,9 @@ public class CloudsGame implements ApplicationListener {
         screenWidth = width;
         screenHeight = height;
         camera.setToOrtho(true, screenWidth, screenHeight);
-        hero.resetToInitialPosition(width, height);
+        hero.resetToInitialPosition(screenWidth, screenHeight);
+        score.setScreenHeight(screenHeight);
+        score.setScreenWidth(screenWidth);
     }
 
     @Override
