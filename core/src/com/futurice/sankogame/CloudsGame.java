@@ -31,8 +31,10 @@ public class CloudsGame implements ApplicationListener {
     private Score score;
     private List<Bullet> bullets;
     private List<Cloud> clouds;
+    private Duck duck;
     private long lastTime;
     private long lastTimeSpawnedCloud;
+    private long lastTimeSpawnedDuck;
     private boolean bulletJustShot;
     private Controller controller;
 
@@ -53,6 +55,7 @@ public class CloudsGame implements ApplicationListener {
 
         lastTime = TimeUtils.nanoTime();
         lastTimeSpawnedCloud = lastTime;
+        lastTimeSpawnedDuck = lastTime;
     }
 
     private void resetGame() {
@@ -60,6 +63,10 @@ public class CloudsGame implements ApplicationListener {
         bullets.clear();
         clouds.clear();
         score.reset();
+        duck = null;
+        long now = TimeUtils.nanoTime();
+        lastTimeSpawnedDuck = now;
+        lastTimeSpawnedCloud = now;
     }
 
     @Override
@@ -156,6 +163,11 @@ public class CloudsGame implements ApplicationListener {
             clouds.add(Cloud.spawnFromScreenBorder(Cloud.Size.BIG, screenWidth));
             lastTimeSpawnedCloud = now;
         }
+        // Spawn duck
+        if (now - lastTimeSpawnedDuck > GamePlayParams.DUCK_SPAWN_INTERVAL*1000000) {
+            duck = Duck.spawnFromScreenBorder(screenWidth, screenHeight);
+            lastTimeSpawnedDuck = now;
+        }
 
         // Resolve cloud-bullet collisions
         List<Cloud> newSplittedClouds = new ArrayList<Cloud>();
@@ -171,12 +183,26 @@ public class CloudsGame implements ApplicationListener {
         }
         clouds.addAll(newSplittedClouds);
 
-        // Resolve hero-cloud collisions
+        // Resolve bullet-duck collisions
+        if (duck != null) {
+            for (Bullet b : bullets) {
+                if (b.getBoundingBox().overlaps(duck.getBoundingBox())) {
+                    duck.canDestroy = true;
+                    b.canDestroy = true;
+                    score.add(100);
+                }
+            }
+        }
+
+        // Resolve hero collisions
         boolean heroDied = false;
         for (Cloud c : clouds) {
             if (c.getBoundingBox().overlaps(hero.getBoundingBox())) {
                 heroDied = true;
             }
+        }
+        if (duck != null && duck.getBoundingBox().overlaps(hero.getBoundingBox())) {
+            heroDied = true;
         }
         if (heroDied) {
             resetGame();
@@ -195,6 +221,17 @@ public class CloudsGame implements ApplicationListener {
             }
             if (c.x+c.getBoundingBox().getWidth() < 0 && c.vx < 0) {
                 c.canDestroy = true;
+            }
+        }
+        // Remove dead duck
+        if (duck != null) {
+            if (duck.x > screenWidth + duck.getBoundingBox().getWidth()
+            || duck.x < 0 - duck.getBoundingBox().getWidth())
+            {
+                duck.canDestroy = true;
+            }
+            if (duck.canDestroy) {
+                duck = null;
             }
         }
     }
@@ -234,6 +271,9 @@ public class CloudsGame implements ApplicationListener {
         updateBullets();
         updateClouds();
         score.redraw(batch);
+        if (duck != null) {
+            duck.redraw(batch);
+        }
         batch.end();
     }
 
