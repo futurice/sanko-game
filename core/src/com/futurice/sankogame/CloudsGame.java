@@ -4,6 +4,9 @@ import com.badlogic.gdx.Application;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.controllers.Controller;
+import com.badlogic.gdx.controllers.Controllers;
+import com.badlogic.gdx.controllers.mappings.Ouya;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -30,6 +33,7 @@ public class CloudsGame implements ApplicationListener {
     private long lastTime;
     private long lastTimeSpawnedCloud;
     private boolean bulletJustShot;
+    private Controller controller;
 
     @Override
     public void create() {
@@ -38,6 +42,9 @@ public class CloudsGame implements ApplicationListener {
         hero = new Hero(screenWidth, screenHeight);
         bullets = new ArrayList<Bullet>();
         clouds = new ArrayList<Cloud>();
+        if (Controllers.getControllers().size > 0) {
+            controller = Controllers.getControllers().first();
+        }
 
         camera = new OrthographicCamera();
         camera.setToOrtho(true, screenWidth, screenHeight);
@@ -65,7 +72,34 @@ public class CloudsGame implements ApplicationListener {
         redrawAll(delta);
     }
 
-    private void handlePlayerInputs() {
+    private void handleOuyaInputs() {
+        float leftXAxis = controller.getAxis(Ouya.AXIS_LEFT_X);
+        boolean oButton = controller.getButton(Ouya.BUTTON_O);
+
+        if (oButton) {
+            if (!bulletJustShot) {
+                bullets.add(new Bullet(hero.x, hero.y));
+                bulletJustShot = true;
+            }
+        } else {
+            bulletJustShot = false;
+        }
+
+        // Fix for 'neutral' threshold
+        if (Math.abs(leftXAxis) < 0.1) {
+            leftXAxis = 0;
+        }
+        // Decelerate
+        if (leftXAxis == 0) {
+            hero.setVelocityX(hero.getVelocityX() * GamePlayParams.HERO_MOVE_DECELERATION_X);
+        }
+        // Move sideways
+        else {
+            hero.setVelocityX(leftXAxis*GamePlayParams.HERO_MOVE_SPEED_X);
+        }
+    }
+
+    private void handleKeyboardInputs() {
         // Shoot
         if (Gdx.input.isKeyPressed(Input.Keys.X)) {
             if (!bulletJustShot) {
@@ -83,6 +117,14 @@ public class CloudsGame implements ApplicationListener {
             hero.setVelocityX(GamePlayParams.HERO_MOVE_SPEED_X);
         } else {
             hero.setVelocityX(hero.getVelocityX() * GamePlayParams.HERO_MOVE_DECELERATION_X);
+        }
+    }
+
+    private void handlePlayerInputs() {
+        if(controller != null && controller.getName().equals(Ouya.ID)) {
+            handleOuyaInputs();
+        } else {
+            handleKeyboardInputs();
         }
     }
 
