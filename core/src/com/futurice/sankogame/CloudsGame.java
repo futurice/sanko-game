@@ -146,6 +146,12 @@ public class CloudsGame implements ApplicationListener {
         }
     }
 
+    private float getEnvironmentSpeed(long currentScore) {
+        final double initialSpeedY = GamePlayParams.ENVIRONMENT_INITIAL_SPEED_Y;
+        final double virtualScore = Math.min(2000, (double)currentScore);
+        return (float) (initialSpeedY * (1.0 + virtualScore*0.001));
+    }
+
     public void updatePhysics() {
         // Physics updated
         hero.x += hero.getVelocityX();
@@ -161,14 +167,27 @@ public class CloudsGame implements ApplicationListener {
 
         // Spawn clouds
         final long now = TimeUtils.nanoTime();
-        if (now - lastTimeSpawnedCloud > GamePlayParams.CLOUD_SPAWN_INTERVAL*1000000) {
-            clouds.add(Cloud.spawnFromScreenBorder(Cloud.Size.BIG, screenWidth));
+        final double spawnInterval = Math.max(
+            GamePlayParams.CLOUD_SPAWN_INTERVAL * 1000000 * (1.0 - ((double)score.getValue())*0.001),
+            GamePlayParams.CLOUD_SPAWN_INTERVAL * 1000000 * 0.25
+        );
+        if (now - lastTimeSpawnedCloud > spawnInterval) {
+            clouds.add(Cloud.spawnFromScreenBorder(
+                Cloud.Size.BIG,
+                screenWidth,
+                getEnvironmentSpeed(score.getValue())
+            ));
             lastTimeSpawnedCloud = now;
         }
         // Spawn duck
         if (duck == null && websocketHelper.getLastMessage().equals("y")) {
             duck = Duck.spawnFromScreenBorder(screenWidth, screenHeight);
             websocketHelper.setLastMessage("");
+        }
+
+        // Update cloud speeds
+        for (Cloud c : clouds) {
+            c.setVy(getEnvironmentSpeed(score.getValue()));
         }
 
         // Resolve cloud-bullet collisions
@@ -178,7 +197,7 @@ public class CloudsGame implements ApplicationListener {
                 if (b.getBoundingBox().overlaps(c.getBoundingBox())) {
                     b.canDestroy = true;
                     c.canDestroy = true;
-                    newSplittedClouds.addAll(c.split());
+                    newSplittedClouds.addAll(c.split(getEnvironmentSpeed(score.getValue())));
                     score.add(1);
                 }
             }

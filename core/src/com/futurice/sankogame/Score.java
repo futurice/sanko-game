@@ -44,6 +44,10 @@ public class Score {
         this.screenHeight = screenHeight;
     }
 
+    public long getValue() {
+        return score;
+    }
+
     public void setScreenWidth(int screenWidth) {
         this.screenWidth = screenWidth;
     }

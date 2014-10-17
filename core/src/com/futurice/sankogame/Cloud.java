@@ -18,8 +18,8 @@ public class Cloud {
     public double x;
     public double y;
     public double vx;
+    public double vy;
     private boolean goingToRight;
-    private double vy = GamePlayParams.ENVIRONMENT_INITIAL_SPEED_Y;
     private Size size;
     private float screenWidth = 1000000f;
 
@@ -29,12 +29,13 @@ public class Cloud {
         SMALL, MEDIUM, BIG
     }
 
-    public Cloud(Size size) {
+    public Cloud(Size size, double initialVy) {
         canDestroy = false;
         this.size = size;
         texture = new Texture(Gdx.files.internal(TEXTURE_PATH));
         debugTexture = new Texture(Gdx.files.internal("images/green.png"));
         boundingBox = new Rectangle();
+        vy = initialVy;
         updateBoundingBox();
     }
 
@@ -51,9 +52,15 @@ public class Cloud {
         }
     }
 
-    public static Cloud spawnFromScreenBorder(final Size size, final float screenWidth) {
+    public void setVy(double vy) {
+        this.vy = vy;
+    }
+
+    public static Cloud spawnFromScreenBorder(final Size size, final float screenWidth,
+        final double initialVy)
+    {
         final float velocityX = getVelocityXforSize(size);
-        final Cloud cloud = new Cloud(size);
+        final Cloud cloud = new Cloud(size, initialVy);
         cloud.goingToRight = Math.random() > 0.5;
         if (cloud.goingToRight) {
             cloud.vx = velocityX;
@@ -66,7 +73,7 @@ public class Cloud {
         return cloud;
     }
 
-    public List<Cloud> split() {
+    public List<Cloud> split(final double initialVy) {
         if (this.size == Size.SMALL) {
             return new ArrayList<Cloud>();
         }
@@ -80,13 +87,13 @@ public class Cloud {
         }
         final float velocityX = getVelocityXforSize(newSize);
 
-        final Cloud cloud1 = new Cloud(newSize);
+        final Cloud cloud1 = new Cloud(newSize, initialVy);
         cloud1.goingToRight = true;
         cloud1.vx = velocityX;
         cloud1.x = this.x + getBoundingBox().getWidth()*0.25;
         cloud1.y = this.y;
 
-        final Cloud cloud2 = new Cloud(newSize);
+        final Cloud cloud2 = new Cloud(newSize, initialVy);
         cloud2.goingToRight = false;
         cloud2.vx = -velocityX;
         cloud2.x = this.x - getBoundingBox().getWidth()*0.25;
