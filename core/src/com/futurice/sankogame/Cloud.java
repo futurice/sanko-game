@@ -11,8 +11,10 @@ import java.util.List;
 public class Cloud {
     static private final String TEXTURE_PATH = "images/CloudBig1.png";
 
+    private Texture debugTexture;
     private Texture texture;
     private Rectangle boundingBox;
+    public float boundingBoxCorrection = 0.8f;
     public double x;
     public double y;
     public double vx;
@@ -31,6 +33,7 @@ public class Cloud {
         canDestroy = false;
         this.size = size;
         texture = new Texture(Gdx.files.internal(TEXTURE_PATH));
+        debugTexture = new Texture(Gdx.files.internal("images/green.png"));
         boundingBox = new Rectangle();
         updateBoundingBox();
     }
@@ -107,7 +110,14 @@ public class Cloud {
 
     private void updateBoundingBox() {
         final float scale = getScale();
-        boundingBox.set((float) x, (float) y, texture.getWidth()*scale, texture.getHeight()*scale);
+        final float width = texture.getWidth()*scale;
+        final float height = texture.getHeight()*scale;
+        boundingBox.set(
+            (float) x - width*0.5f*boundingBoxCorrection,
+            (float) y,
+            width*boundingBoxCorrection,
+            height*0.5f*boundingBoxCorrection
+        );
     }
 
     private float getScale() {
@@ -124,9 +134,18 @@ public class Cloud {
 
     private void draw(final SpriteBatch batch) {
         final float scale = getScale();
+        // Draw bounding boxes
+//        batch.draw(debugTexture,
+//            (float) x - texture.getWidth()*0.5f*scale*boundingBoxCorrection,
+//            (float) y,
+//            texture.getWidth()*scale*boundingBoxCorrection,
+//            texture.getHeight()*0.5f*scale*boundingBoxCorrection
+//        );
+
         batch.draw(texture,
-            (float) x, (float) y,
-            texture.getWidth()*0.5f, texture.getHeight()*0.5f, // origin
+            (float) x - texture.getWidth()*0.5f*scale,
+            (float) y - texture.getHeight()*0.5f*scale,
+            0,0,
             texture.getWidth(), texture.getHeight(), // width,height
             scale, scale, // scale
             0f, // rotation
