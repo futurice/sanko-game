@@ -11,6 +11,8 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.TimeUtils;
+import com.futurice.sankogame.helpers.WebsocketHelper;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -34,9 +36,9 @@ public class CloudsGame implements ApplicationListener {
     private Duck duck;
     private long lastTime;
     private long lastTimeSpawnedCloud;
-    private long lastTimeSpawnedDuck;
     private boolean bulletJustShot;
     private Controller controller;
+    private WebsocketHelper websocketHelper;
 
     @Override
     public void create() {
@@ -49,13 +51,14 @@ public class CloudsGame implements ApplicationListener {
         if (Controllers.getControllers().size > 0) {
             controller = Controllers.getControllers().first();
         }
+        websocketHelper = new WebsocketHelper();
+        websocketHelper.connectWebSocket();
 
         camera = new OrthographicCamera();
         camera.setToOrtho(true, screenWidth, screenHeight);
 
         lastTime = TimeUtils.nanoTime();
         lastTimeSpawnedCloud = lastTime;
-        lastTimeSpawnedDuck = lastTime;
     }
 
     private void resetGame() {
@@ -65,7 +68,6 @@ public class CloudsGame implements ApplicationListener {
         score.reset();
         duck = null;
         long now = TimeUtils.nanoTime();
-        lastTimeSpawnedDuck = now;
         lastTimeSpawnedCloud = now;
     }
 
@@ -164,9 +166,9 @@ public class CloudsGame implements ApplicationListener {
             lastTimeSpawnedCloud = now;
         }
         // Spawn duck
-        if (now - lastTimeSpawnedDuck > GamePlayParams.DUCK_SPAWN_INTERVAL*1000000) {
+        if (duck == null && websocketHelper.getLastMessage().equals("y")) {
             duck = Duck.spawnFromScreenBorder(screenWidth, screenHeight);
-            lastTimeSpawnedDuck = now;
+            websocketHelper.setLastMessage("");
         }
 
         // Resolve cloud-bullet collisions
