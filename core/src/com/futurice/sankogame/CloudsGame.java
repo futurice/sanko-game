@@ -34,7 +34,8 @@ public class CloudsGame implements ApplicationListener {
     private FinalScore finalScore;
     private List<Bullet> bullets;
     private List<Cloud> clouds;
-    private Duck duck;
+    private Star star;
+    private Horse horse;
     private long lastTime;
     private long lastTimeSpawnedCloud;
     private boolean bulletJustShot;
@@ -70,7 +71,8 @@ public class CloudsGame implements ApplicationListener {
         clouds.clear();
         finalScore.setValue(score.getValue());
         score.reset();
-        duck = null;
+        star = null;
+        horse = null;
         long now = TimeUtils.nanoTime();
         lastTimeSpawnedCloud = now;
     }
@@ -183,13 +185,15 @@ public class CloudsGame implements ApplicationListener {
         hero.x += hero.getVelocityX();
 
         maybeSpawnClouds();
-        maybeSpawnDuck();
+        maybeSpawnStar();
+        maybeSpawnHorse();
 
         updateCloudPhysics();
 
         resolveHeroEnvironmentCollisions();
         resolveCloudBulletCollisions();
-        resolveDuckBulletCollisions();
+        resolveStarBulletCollisions();
+        resolveHorseBulletCollisions();
         resolveHeroCollisions();
 
         removeDeadStuff();
@@ -221,9 +225,16 @@ public class CloudsGame implements ApplicationListener {
         }
     }
 
-    public void maybeSpawnDuck() {
-        if (duck == null && websocketHelper.getLastMessage().equals("y")) {
-            duck = Duck.spawnFromScreenBorder(screenWidth, screenHeight);
+    public void maybeSpawnStar() {
+        if (star == null && websocketHelper.getLastMessage().equals("y")) {
+            star = Star.spawnFromScreenBorder(screenWidth, screenHeight);
+            websocketHelper.setLastMessage("");
+        }
+    }
+
+    public void maybeSpawnHorse() {
+        if (horse == null && websocketHelper.getLastMessage().equals("r")) {
+            horse = Horse.spawnFromScreenBorder(screenWidth, screenHeight);
             websocketHelper.setLastMessage("");
         }
     }
@@ -249,11 +260,23 @@ public class CloudsGame implements ApplicationListener {
         clouds.addAll(newSplittedClouds);
     }
 
-    public void resolveDuckBulletCollisions() {
-        if (duck != null) {
+    public void resolveStarBulletCollisions() {
+        if (star != null) {
             for (Bullet b : bullets) {
-                if (b.getBoundingBox().overlaps(duck.getBoundingBox())) {
-                    duck.canDestroy = true;
+                if (b.getBoundingBox().overlaps(star.getBoundingBox())) {
+                    star.canDestroy = true;
+                    b.canDestroy = true;
+                    score.add(100);
+                }
+            }
+        }
+    }
+
+    public void resolveHorseBulletCollisions() {
+        if (horse != null) {
+            for (Bullet b : bullets) {
+                if (b.getBoundingBox().overlaps(horse.getBoundingBox())) {
+                    horse.canDestroy = true;
                     b.canDestroy = true;
                     score.add(100);
                 }
@@ -268,7 +291,10 @@ public class CloudsGame implements ApplicationListener {
                 heroDied = true;
             }
         }
-        if (duck != null && duck.getBoundingBox().overlaps(hero.getBoundingBox())) {
+        if (star != null && star.getBoundingBox().overlaps(hero.getBoundingBox())) {
+            heroDied = true;
+        }
+        if (horse != null && horse.getBoundingBox().overlaps(hero.getBoundingBox())) {
             heroDied = true;
         }
         if (heroDied) {
@@ -292,15 +318,26 @@ public class CloudsGame implements ApplicationListener {
                 c.canDestroy = true;
             }
         }
-        // Remove dead duck
-        if (duck != null) {
-            if (duck.x > screenWidth + duck.getBoundingBox().getWidth()
-                || duck.x < 0 - duck.getBoundingBox().getWidth())
+        // Remove dead star
+        if (star != null) {
+            if (star.x > screenWidth + star.getBoundingBox().getWidth()
+                || star.x < 0 - star.getBoundingBox().getWidth())
             {
-                duck.canDestroy = true;
+                star.canDestroy = true;
             }
-            if (duck.canDestroy) {
-                duck = null;
+            if (star.canDestroy) {
+                star = null;
+            }
+        }
+        // Remove dead horse
+        if (horse != null) {
+            if (horse.x > screenWidth + horse.getBoundingBox().getWidth()
+                || horse.x < 0 - horse.getBoundingBox().getWidth())
+            {
+                horse.canDestroy = true;
+            }
+            if (horse.canDestroy) {
+                horse = null;
             }
         }
     }
@@ -341,8 +378,11 @@ public class CloudsGame implements ApplicationListener {
         updateClouds();
         score.redraw(batch);
         finalScore.redraw(batch);
-        if (duck != null) {
-            duck.redraw(batch);
+        if (star != null) {
+            star.redraw(batch);
+        }
+        if (horse != null) {
+            horse.redraw(batch);
         }
         batch.end();
     }
