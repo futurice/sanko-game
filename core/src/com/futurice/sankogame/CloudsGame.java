@@ -5,11 +5,14 @@ import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.controllers.Controller;
+import com.badlogic.gdx.controllers.ControllerListener;
 import com.badlogic.gdx.controllers.Controllers;
+import com.badlogic.gdx.controllers.PovDirection;
 import com.badlogic.gdx.controllers.mappings.Ouya;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.TimeUtils;
 import com.futurice.sankogame.helpers.WebsocketHelper;
 
@@ -37,6 +40,7 @@ public class CloudsGame implements ApplicationListener {
     private long lastTime;
     private long lastTimeSpawnedCloud;
     private boolean bulletJustShot;
+    private boolean justDashed;
     private Controller controller;
     private WebsocketHelper websocketHelper;
 
@@ -93,7 +97,10 @@ public class CloudsGame implements ApplicationListener {
     private void handleOuyaInputs() {
         float leftXAxis = controller.getAxis(Ouya.AXIS_LEFT_X);
         boolean oButton = controller.getButton(Ouya.BUTTON_O);
+        boolean dashLeft = controller.getButton(Ouya.BUTTON_L1) || controller.getButton(Ouya.BUTTON_L2);
+        boolean dashRight = controller.getButton(Ouya.BUTTON_R1) || controller.getButton(Ouya.BUTTON_R2);
 
+        // Execute shoot
         if (oButton) {
             if (!bulletJustShot) {
                 bullets.add(new Bullet(hero.x, hero.y));
@@ -103,16 +110,35 @@ public class CloudsGame implements ApplicationListener {
             bulletJustShot = false;
         }
 
+        // Execute dash
+        if (dashLeft) {
+            if (!justDashed) {
+                hero.setVelocityX(-GamePlayParams.HERO_DASH_SPEED_X);
+                justDashed = true;
+            }
+        } else if (dashRight) {
+            if (!justDashed) {
+                hero.setVelocityX(GamePlayParams.HERO_DASH_SPEED_X);
+                justDashed = true;
+            }
+        } else {
+            justDashed = false;
+        }
+        // Decelerate dash
+        if (Math.abs(hero.getVelocityX()) > GamePlayParams.HERO_MOVE_SPEED_X) {
+            hero.setVelocityX(hero.getVelocityX() * GamePlayParams.HERO_MOVE_DECELERATION_X);
+        }
+
         // Fix for 'neutral' threshold
         if (Math.abs(leftXAxis) < 0.1) {
             leftXAxis = 0;
         }
         // Decelerate
-        if (leftXAxis == 0) {
+        if (leftXAxis == 0 && Math.abs(hero.getVelocityX()) <= GamePlayParams.HERO_MOVE_SPEED_X) {
             hero.setVelocityX(hero.getVelocityX() * GamePlayParams.HERO_MOVE_DECELERATION_X);
         }
         // Move sideways
-        else {
+        else if (Math.abs(hero.getVelocityX()) <= GamePlayParams.HERO_MOVE_SPEED_X) {
             hero.setVelocityX(leftXAxis*GamePlayParams.HERO_MOVE_SPEED_X);
         }
     }
@@ -156,7 +182,20 @@ public class CloudsGame implements ApplicationListener {
         // Physics updated
         hero.x += hero.getVelocityX();
 
-        // Environment restrictions
+        maybeSpawnClouds();
+        maybeSpawnDuck();
+
+        updateCloudPhysics();
+
+        resolveHeroEnvironmentCollisions();
+        resolveCloudBulletCollisions();
+        resolveDuckBulletCollisions();
+        resolveHeroCollisions();
+
+        removeDeadStuff();
+    }
+
+    public void resolveHeroEnvironmentCollisions() {
         if (hero.x < hero.getBoundingBox().getWidth()) {
             hero.x = hero.getBoundingBox().getWidth();
             hero.setVelocityX(0);
@@ -164,8 +203,9 @@ public class CloudsGame implements ApplicationListener {
             hero.x = screenWidth-hero.getBoundingBox().getWidth();
             hero.setVelocityX(0);
         }
+    }
 
-        // Spawn clouds
+    public void maybeSpawnClouds() {
         final long now = TimeUtils.nanoTime();
         final double spawnInterval = Math.max(
             GamePlayParams.CLOUD_SPAWN_INTERVAL * 1000000 * (1.0 - ((double)score.getValue())*0.001),
@@ -179,18 +219,22 @@ public class CloudsGame implements ApplicationListener {
             ));
             lastTimeSpawnedCloud = now;
         }
-        // Spawn duck
+    }
+
+    public void maybeSpawnDuck() {
         if (duck == null && websocketHelper.getLastMessage().equals("y")) {
             duck = Duck.spawnFromScreenBorder(screenWidth, screenHeight);
             websocketHelper.setLastMessage("");
         }
+    }
 
-        // Update cloud speeds
+    public void updateCloudPhysics() {
         for (Cloud c : clouds) {
             c.setVy(getEnvironmentSpeed(score.getValue()));
         }
+    }
 
-        // Resolve cloud-bullet collisions
+    public void resolveCloudBulletCollisions() {
         List<Cloud> newSplittedClouds = new ArrayList<Cloud>();
         for (Bullet b : bullets) {
             for (Cloud c : clouds) {
@@ -203,8 +247,9 @@ public class CloudsGame implements ApplicationListener {
             }
         }
         clouds.addAll(newSplittedClouds);
+    }
 
-        // Resolve bullet-duck collisions
+    public void resolveDuckBulletCollisions() {
         if (duck != null) {
             for (Bullet b : bullets) {
                 if (b.getBoundingBox().overlaps(duck.getBoundingBox())) {
@@ -214,8 +259,9 @@ public class CloudsGame implements ApplicationListener {
                 }
             }
         }
+    }
 
-        // Resolve hero collisions
+    public void resolveHeroCollisions() {
         boolean heroDied = false;
         for (Cloud c : clouds) {
             if (c.getBoundingBox().overlaps(hero.getBoundingBox())) {
@@ -228,7 +274,9 @@ public class CloudsGame implements ApplicationListener {
         if (heroDied) {
             resetGame();
         }
+    }
 
+    public void removeDeadStuff() {
         // Remove old bullets
         for (Bullet b : bullets) {
             if (b.y - b.getBoundingBox().getHeight() < 0) {
@@ -247,7 +295,7 @@ public class CloudsGame implements ApplicationListener {
         // Remove dead duck
         if (duck != null) {
             if (duck.x > screenWidth + duck.getBoundingBox().getWidth()
-            || duck.x < 0 - duck.getBoundingBox().getWidth())
+                || duck.x < 0 - duck.getBoundingBox().getWidth())
             {
                 duck.canDestroy = true;
             }

@@ -2,6 +2,7 @@ package com.futurice.sankogame;
 
 public class GamePlayParams {
     public static final float HERO_MOVE_SPEED_X = 12f;
+    public static final float HERO_DASH_SPEED_X = 60f;
     public static final float HERO_MOVE_DECELERATION_X = 0.78f;
     public static final float BULLET_SPEED = 20f;
     public static final float ENVIRONMENT_INITIAL_SPEED_Y = 6f;
