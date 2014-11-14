@@ -5,14 +5,11 @@ import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.controllers.Controller;
-import com.badlogic.gdx.controllers.ControllerListener;
 import com.badlogic.gdx.controllers.Controllers;
-import com.badlogic.gdx.controllers.PovDirection;
 import com.badlogic.gdx.controllers.mappings.Ouya;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.TimeUtils;
 import com.futurice.sankogame.helpers.WebsocketHelper;
 
@@ -34,6 +31,7 @@ public class CloudsGame implements ApplicationListener {
     private int screenHeight = 480;
     private Hero hero;
     private Score score;
+    private FinalScore finalScore;
     private List<Bullet> bullets;
     private List<Cloud> clouds;
     private Duck duck;
@@ -50,6 +48,7 @@ public class CloudsGame implements ApplicationListener {
         batch = new SpriteBatch();
         hero = new Hero(screenWidth, screenHeight);
         score = new Score(screenWidth, screenHeight);
+        finalScore = new FinalScore(screenWidth, screenHeight);
         bullets = new ArrayList<Bullet>();
         clouds = new ArrayList<Cloud>();
         if (Controllers.getControllers().size > 0) {
@@ -69,6 +68,7 @@ public class CloudsGame implements ApplicationListener {
         hero.resetToInitialPosition(screenWidth, screenHeight);
         bullets.clear();
         clouds.clear();
+        finalScore.setValue(score.getValue());
         score.reset();
         duck = null;
         long now = TimeUtils.nanoTime();
@@ -340,6 +340,7 @@ public class CloudsGame implements ApplicationListener {
         updateBullets();
         updateClouds();
         score.redraw(batch);
+        finalScore.redraw(batch);
         if (duck != null) {
             duck.redraw(batch);
         }
@@ -361,6 +362,8 @@ public class CloudsGame implements ApplicationListener {
         hero.resetToInitialPosition(screenWidth, screenHeight);
         score.setScreenHeight(screenHeight);
         score.setScreenWidth(screenWidth);
+        finalScore.setScreenWidth(screenWidth);
+        finalScore.setScreenHeight(screenHeight);
     }
 
     @Override
